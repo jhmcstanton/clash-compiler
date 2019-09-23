@@ -393,9 +393,23 @@ instance ( BitPack a
          , KnownNat (BitSize b)
          ) => BitPack (Either a b)
 
+
+-- temporary instance for Maybe
+-- the generic instance has BitSize = CLog 2 2 + Max 0 (BitSize a)
+-- which currently doesn't typecheck in AutoReg
 instance ( BitPack a
          , KnownNat (BitSize a)
-         ) => BitPack (Maybe a)
+         ) => BitPack (Maybe a) where
+  type BitSize (Maybe a) = 1 + BitSize a
+  pack Nothing = (0::BitVector 1) ++# undefined#
+  pack (Just x)= (1::BitVector 1) ++# pack x
+  unpack bv = case constr of
+                0 -> Nothing
+                _ -> Just (unpack rest)
+    where
+      constr :: BitVector 1
+      (constr,rest) = split# bv
+
 
 #if MIN_VERSION_base(4,12,0)
 instance ( BitPack a
