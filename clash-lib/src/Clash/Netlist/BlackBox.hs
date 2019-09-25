@@ -410,6 +410,7 @@ mkPrimitive bbEParen bbEasD dst (nm,pinfo) args ty tickDecls =
                         netAssignRhs = Assignment tmpRhs scrutExpr
                     return (DataTag scrutHTy (Right tmpRhs),[netDeclRhs,netAssignRhs] ++ scrutDecls)
               _ -> error $ $(curLoc) ++ "dataToTag: " ++ show (map (either showPpr showPpr) args)
+          | pNm == "Clash.Explicit.SimIO.mealyIO" -> error ("OMG!!!" ++ showPpr ((lefts args) !! 1))
           | otherwise ->
               return (BlackBoxE "" [] [] []
                         (BBTemplate [Text $ mconcat ["NO_TRANSLATION_FOR:",fromStrict pNm]])

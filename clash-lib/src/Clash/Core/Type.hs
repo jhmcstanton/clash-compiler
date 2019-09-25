@@ -199,6 +199,9 @@ coreView1 tcMap ty = case tyView ty of
     | nameOcc tcNm == "Clash.Signal.Internal.Signal"
     , [_,elTy] <- args
     -> Just elTy
+    | nameOcc tcNm == "Clash.Explicit.SimIO.SimIO"
+    , [elTy] <- args
+    -> Just (mkFunTy undefinedTy elTy)
     | otherwise
     -> case tcMap `lookupUniqMap'` tcNm of
          AlgTyCon {algTcRhs = (NewTyCon _ nt)}

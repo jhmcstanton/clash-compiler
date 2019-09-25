@@ -220,6 +220,8 @@ data HWType
   -- ^ Annotated with HDL attributes
   | KnownDomain !Identifier !Integer !ActiveEdge !ResetKind !InitBehavior !ResetPolarity
   -- ^ Domain name, period, active edge, reset kind, initial value behavior
+  | FileType
+  | RegType HWType
   deriving (Eq, Ord, Show, Generic, NFData, Hashable)
 
 -- | Extract hardware attributes from Annotated. Returns an empty list if
@@ -271,6 +273,11 @@ data Declaration
       -- ^ Signal declaration
   | TickDecl Comment
   -- ^ HDL tick corresponding to a Core tick
+  | SeqDecl SeqDecl
+  deriving Show
+
+data SeqDecl
+  = Seq Declaration SeqDecl
   deriving Show
 
 data EntityOrComponent = Entity | Comp | Empty
