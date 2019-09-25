@@ -15,7 +15,7 @@ import AutoReg
 import Control.Monad
 
 import Control.Lens.Internal.TH (appsE1,bndrName,conAppsT)
-
+import Data.List
 
 deriveAutoReg :: Name -> DecsQ
 deriveAutoReg tyNm = do
@@ -39,14 +39,16 @@ deriveTyConI other = fail ("deriveTyConI called with: " ++ show other)
 
 deriveAutoRegProduct :: Name -> [TyVarBndr] -> Con -> DecsQ
 deriveAutoRegProduct tyNm tyVarBndrs con = case con of
-  NormalC nm (map snd -> fieldTys) -> go nm fieldTys
-  RecC nm (map (\(_,_,ty)->ty) -> fieldTys) -> go nm fieldTys
-  InfixC ty1 nm ty2 -> go nm (map snd [ty1,ty2])
+  NormalC nm (map (\(_,ty) -> (Nothing,ty)) -> fieldTys) -> go nm fieldTys
+  RecC nm (map (\(sNm,_,ty)-> (Just sNm,ty)) -> fieldTys) -> go nm fieldTys
+  InfixC f1 nm f2 -> go nm (map (\(_,ty) -> (Nothing,ty)) [f1,f2])
   ForallC _ _ con' -> fail "Can't derive AutoReg for existentially quantified data constructors " -- deriveAutoRegProduct tyNm tyVarBndrs con'
   _ -> fail "Can't derive AutoReg for GADTs"
   where
-    go :: Name -> [Type] -> Q [Dec]
-    go tyConNm fieldTys = do
+    go :: Name -> [(Maybe Name,Type)] -> Q [Dec]
+    go tyConNm fields = do
+      let fieldTys = map snd fields
+          fieldNames = map fst fields
       args <- mapM newName ["clk","rst","en","initVal","input"]
       let [clkE,rstE,enE,initValE,inputE] = map varE args
       tyVarRoles <- reifyRoles tyNm
@@ -55,23 +57,28 @@ deriveAutoRegProduct tyNm tyVarBndrs con = case con of
         ctx = map (AppT (ConT ''AutoReg)) [tv | (tv,RepresentationalR) <- zip tyVars tyVarRoles] -- TODO what about the Nominal role?
         ty = conAppsT tyNm tyVars
         argsP = map varP args
-      parts <- generateNames "field" fieldTys
+      parts <- generateNames "field" fields
       let
         field :: Name -> Int -> DecQ
         field nm nr = valD (varP nm) (normalB [|$fieldSel <$> $inputE|]) []
           where
             fieldSel = do
               xNm <- newName "x"
-              lamE [conP tyConNm [if nr == n then varP xNm else wildP | (n,_) <- zip [0..] fieldTys]] (varE xNm)
+              lamE [conP tyConNm [if nr == n then varP xNm else wildP | (n,_) <- zip [0..] fields]] (varE xNm)
       fieldDecls <- sequence $ zipWith field parts [0..]
-      sigs <- generateNames "sig" fieldTys
-      initVals <- generateNames "initVal" fieldTys
+      sigs <- generateNames "sig" fields
+      initVals <- generateNames "initVal" fields
       let initPat = conP tyConNm (map varP initVals)
       initDecl <- valD initPat (normalB initValE) []
-      partDecls <- concat <$> (sequence $ zipWith3 (\s v i -> [d| $s = autoReg $clkE $rstE $enE $i $v|])
+      partDecls <- concat <$> (sequence $ zipWith4 (\s v i nameM -> case nameM of
+                                                                     Nothing -> [d| $s = autoReg $clkE $rstE $enE $i $v|]
+                                                                     Just nm -> let nmSym = litT $ strTyLit (show nm) in [d| $s = suffixName @($nmSym) (autoReg $clkE $rstE $enE $i $v) |]
+                                                   )
                                                    (varP <$> sigs)
                                                    (varE <$> parts)
-                                                   (varE <$> initVals))
+                                                   (varE <$> initVals)
+                                                   (fieldNames)
+                                                   )
       let
           decls :: [DecQ]
           decls = map pure (initDecl : fieldDecls ++ partDecls)

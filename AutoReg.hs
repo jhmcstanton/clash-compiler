@@ -20,15 +20,6 @@ class (NFDataX a) => AutoReg a where
           -> Signal dom a -> Signal dom a
   autoReg = register
 
-autoRegGeneric
-  :: (Generic a, GAutoReg (Rep a), KnownDomain dom)
-  => Clock dom -> Reset dom -> Enable dom
-  -> a -- ^ Reset value
-  -> Signal dom a -> Signal dom a
-autoRegGeneric clk rst en initVal input =
-  to <$> gAutoReg clk rst en (from initVal) (from <$> input)
-  -- undefined
-
 instance AutoReg Bool
 instance AutoReg Char
 instance AutoReg Integer
@@ -82,62 +73,17 @@ autoRegImplicit :: (I.HiddenClockResetEnable dom, AutoReg a)
                 => a -> Signal dom a -> Signal dom a
 autoRegImplicit = I.hideClockResetEnable autoReg
 
--- instance Bundle ((f :*: g) k) where
---   type Unbundled dom ((f :*: g) k) = ((forall k. Signal dom (f k)) :*: (forall k. Signal dom (g k)))
--- p
--- pbundle (fs :*: gs) = (:*:) <$> fs <*> gs
-
---(:*:) :: f p -> g p -> (:*:) f g p
---punbundle :: Signal dom (f p :*: g p) -> (Signal dom (f p) :*: Signal dom (g p))
-
--- punbundle :: Functor g => g ((:*:) f f p) -> (:*:) g g (f p)
--- punbundle :: forall sig f g p . sig ((:*:) f g p) -> (:*:) (Compose sig f) (Compose sig g) p
---
--- punbundle fgs = (_ <$> fgs) :*: (_ <$> fgs)
---     where
---       -- fs :: _
---       -- fs = fmap getF fgs
---       -- getF :: _ -- (:*:) f g1 p1 -> f p1
---       getF (f :*: _) = f
---       getG (_ :*: g) = g
 
 
 
--- class GAutoReg g where
---   gAutoReg :: KnownDomain dom
---           => Clock dom -> Reset dom -> Enable dom
---           -> g a -- ^ Reset value
---           -> Signal dom (g a) -> Signal dom (g a)
---
--- instance (GAutoReg f, GAutoReg g) => GAutoReg (f :*: g) where
---   gAutoReg clk rst en initVal input =
---     (:*:) <$> fSig <*> gSig
---     where
---       (fs :*: gs) = punbundle input :: _ -- ((Signal dom f) :*: (Signal dom g))
---       (fInit :*: gInit) = initVal
---       fSig = autoReg clk rst en fInit fs
---       gSig = autoReg clk rst en gInit gs
-
-
-
--- class GAutoReg f where
---   gAutoReg :: f a -> Compose (Signal dom) f a -> Compose (Signal dom) f a
---
--- instance (GAutoReg f, GAutoReg g) => GAutoReg (f :*: g) where
---   gAutoReg (a :*: b) (Compose q) = Compose ((:*:) <$> getCompose sa <*> getCompose sb)
---     where
---       qa = fmap (\(l :*: _) -> l) q
---       sa = gAutoReg a (Compose qa)
---
---       qb = fmap (\(_ :*: r) -> r) q
---       sb = gAutoReg b (Compose qb)
-
-punbundle
-  :: Signal dom ((:*:) f g a) -> (:*:) (Compose (Signal dom) f) (Compose (Signal dom) g) a
-punbundle fgs = (Compose (getF <$> fgs)) :*: (Compose (getG <$> fgs))
-  where
-    getF (f :*: _) = f
-    getG (_ :*: g) = g
+--- using generics
+autoRegGeneric
+  :: (Generic a, GAutoReg (Rep a), KnownDomain dom)
+  => Clock dom -> Reset dom -> Enable dom
+  -> a -- ^ Reset value
+  -> Signal dom a -> Signal dom a
+autoRegGeneric clk rst en initVal input =
+  to <$> gAutoReg clk rst en (from initVal) (from <$> input)
 
 
 class GAutoReg f where
@@ -149,19 +95,16 @@ instance (GAutoReg f, GAutoReg g) => GAutoReg (f :*: g) where
       getL (l :*: _) = l
       getR (_ :*: r) = r
       fs :*: gs = unbundle q
-      sa = gAutoReg clk rst en a (getCompose fs) -- (getL <$> q)
-      sb = gAutoReg clk rst en b (getCompose gs) -- (getR <$> q)
+      sa = gAutoReg clk rst en a (getCompose fs)
+      sb = gAutoReg clk rst en b (getCompose gs)
 
--- Ignore datatype and constructor metadata
+-- Ignore datatype metadata
 instance GAutoReg a => GAutoReg (M1 D d a) where
   gAutoReg clk rst en initVal input = M1 <$> gAutoReg clk rst en (unM1 initVal) (unM1 <$> input)
+-- Ignore constructor metadata
 instance GAutoReg a => GAutoReg (M1 C d a) where
   gAutoReg clk rst en initVal input = M1 <$> gAutoReg clk rst en (unM1 initVal) (unM1 <$> input)
--- but use record selector metadata
--- instance (GAutoReg a,Selector selMeta) => GAutoReg (M1 S selMeta a) where
---   gAutoReg clk rst en initVal input = M1 <$> gAutoReg clk rst en (unM1 initVal) (unM1 <$> input)
---     where
---       nm = selName (initVal)
+
 
 -- field with a selector name
 instance (GAutoReg a) => GAutoReg (M1 S (MetaSel (Just selNm) su ss ds) a) where
@@ -172,14 +115,12 @@ instance (GAutoReg a) => GAutoReg (M1 S (MetaSel Nothing su ss ds) a) where
 
 
 
-
+-- Leaf type
 instance AutoReg c => GAutoReg (K1 i c) where
   gAutoReg clk rst en initVal input = K1 <$> autoReg clk rst en (unK1 initVal) (unK1 <$> input)
 
 
-
-
-
+-- Product type
 instance Bundle ((f :*: g) a) where
   type Unbundled t ((f :*: g) a) = (Compose (Signal t) f :*: Compose (Signal t) g) a
   bundle (Compose l :*: Compose r) = (:*:) <$> l <*> r

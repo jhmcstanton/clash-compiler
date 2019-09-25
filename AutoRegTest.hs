@@ -12,7 +12,7 @@ import AutoRegDeriving
 data MyPair a b = MkPair { getA :: a, getB :: b } deriving (Generic,NFDataX)
 deriveAutoReg ''MyPair
 
-data Tup3 a b c = MkTup3 { fA :: a, fB :: b, fC :: c } deriving (Generic,NFDataX)
+data Tup3 a b c = MkTup3 { fieldA :: a, fieldB :: b, fieldC :: c } deriving (Generic,NFDataX)
 deriveAutoReg ''Tup3
 
 
@@ -54,6 +54,8 @@ data TestNoFields = NoFields
 
 initVal :: (MyPair (Tup3 Bool (Unsigned 3) (BitVector 4))  (Tup3 Bool (Unsigned 3) (BitVector 4)) )
 initVal = MkPair a a where a = (MkTup3 False 2 3)
+-- initVal :: Tup3 Bool (Unsigned 3) (BitVector 4)
+-- initVal = a where a = (MkTup3 False 2 3)
 
 
 testAutoGeneric,testAutoTH :: Clock System -> Reset System
@@ -63,4 +65,8 @@ testAutoGeneric,testAutoTH :: Clock System -> Reset System
 testAutoGeneric clk rst = autoRegGeneric clk rst enableGen initVal
 testAutoTH clk rst =  autoReg clk rst enableGen initVal
 {-# ANN testAutoGeneric (defSyn "testAutoGeneric") #-}
-{- # ANN testAutoTH (defSyn "testAutoTH") #-}
+{-# ANN testAutoTH (defSyn "testAutoTH") #-}
+
+-- topEntity =
+--   testAutoTH
+--   -- testAutoGeneric
