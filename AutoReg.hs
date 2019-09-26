@@ -80,8 +80,8 @@ instance (KnownNat n, AutoReg a) => AutoReg (Vec n a) where
       --           uncurry (autoReg clk rst en)
 
       go2 :: forall (i :: Nat). SNat i -> a  -> Signal dom a -> Signal dom a
-      -- go2 SNat = suffixName @(Show_ i) .
-      go2 SNat = suffixName @("asdf") .
+      go2 SNat = suffixName @(Show_ i) .
+      -- go2 SNat = suffixName @("asdf") .
       -- go2 SNat =
                 (autoReg clk rst en)
 
