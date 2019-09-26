@@ -12,6 +12,7 @@ import qualified Clash.Prelude as I
 import GHC.Generics
 import Data.Functor.Compose
 import Data.Proxy
+import Data.Singletons.Prelude.Show (Show_)
 
 class (NFDataX a) => AutoReg a where
   autoReg :: KnownDomain dom
@@ -65,8 +66,25 @@ instance (AutoReg a, BitPack a, KnownNat (BitSize a)) => AutoReg (Maybe a) where
 --       ySig = autoReg clk rst en yInit ys
 
 instance (KnownNat n, AutoReg a) => AutoReg (Vec n a) where
+  autoReg :: forall dom. KnownDomain dom
+          => Clock dom -> Reset dom -> Enable dom
+          -> Vec n a -- ^ Reset value
+          -> Signal dom (Vec n a) -> Signal dom (Vec n a)
   autoReg clk rst en initVal xs =
-    bundle $ (autoReg clk rst en) <$> initVal <*> (unbundle xs)
+    -- bundle $ smap go1 (zip initVal (unbundle xs))
+    bundle $ smap go2 initVal <*> (unbundle xs)
+    where
+      -- go1 :: forall (i :: Nat). SNat i -> (a,Signal dom a) -> Signal dom a
+      -- -- go1 SNat = suffixName @(Show_ i) .
+      -- go1 SNat =
+      --           uncurry (autoReg clk rst en)
+
+      go2 :: forall (i :: Nat). SNat i -> a  -> Signal dom a -> Signal dom a
+      -- go2 SNat = suffixName @(Show_ i) .
+      go2 SNat = suffixName @("asdf") .
+      -- go2 SNat =
+                (autoReg clk rst en)
+
 
 
 autoRegImplicit :: (I.HiddenClockResetEnable dom, AutoReg a)
