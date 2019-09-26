@@ -42,7 +42,7 @@ deriveAutoRegProduct tyNm tyVarBndrs con = case con of
   NormalC nm (map (\(_,ty) -> (Nothing,ty)) -> fieldTys) -> go nm fieldTys
   RecC nm (map (\(sNm,_,ty)-> (Just sNm,ty)) -> fieldTys) -> go nm fieldTys
   InfixC f1 nm f2 -> go nm (map (\(_,ty) -> (Nothing,ty)) [f1,f2])
-  ForallC _ _ con' -> fail "Can't derive AutoReg for existentially quantified data constructors " -- deriveAutoRegProduct tyNm tyVarBndrs con'
+  ForallC _ _ con' -> fail "Can't derive AutoReg for existentially quantified data constructors" -- deriveAutoRegProduct tyNm tyVarBndrs con'
   _ -> fail "Can't derive AutoReg for GADTs"
   where
     go :: Name -> [(Maybe Name,Type)] -> Q [Dec]

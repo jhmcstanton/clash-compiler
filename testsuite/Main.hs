@@ -50,6 +50,7 @@ runClashTest =
       , runTest "examples"               defBuild []                                        "Calculator"   (["","testBench"],"testBench",True )
       , runTest "examples"               defBuild []                                        "CHIP8"        ([""],"topEntity", False)
       , runTest "examples"               defBuild []                                        "CochleaPlus"  ([""],"topEntity",False)
+      -- , runTest "."               defBuild []                                        "AutoRegTest"  ([""],"topEntity",False)
       , runTest "examples"               defBuild ["-fclash-component-prefix","test"]       "FIR"          (["","test_testBench"],"test_testBench",True )
       , runTest "examples"               defBuild []                                        "Fifo"         ([""],"topEntity",False)
       , runTest "examples"               defBuild []                                        "MAC"          (["","testBench"],"testBench",True)

@@ -52,19 +52,19 @@ data TestNoFields = NoFields
 --   autoReg @(MyPair (Unsigned 3) Bool) @System clk rst enableGen (MkPair 2 False)
 --   -- autoRegGeneric @(MyPair (Unsigned 3) Bool) @System clk rst enableGen (MkPair 2 False)
 
-initVal :: (MyPair (Tup3 Bool (Unsigned 3) (BitVector 4))  (Tup3 Bool (Unsigned 3) (BitVector 4)) )
-initVal = MkPair a a where a = (MkTup3 False 2 3)
+-- initVal :: (MyPair (Tup3 Bool (Unsigned 3) (BitVector 4))  (Tup3 Bool (Unsigned 3) (BitVector 4)) )
+-- initVal = MkPair a a where a = (MkTup3 False 2 3)
 -- initVal :: Tup3 Bool (Unsigned 3) (BitVector 4)
 -- initVal = a where a = (MkTup3 False 2 3)
-
+initVal = let a = 2 :: Unsigned 3 in a :> Nil -- a:> a:>a :>Nil
 
 testAutoGeneric,testAutoTH :: Clock System -> Reset System
   -- -> Signal System (Tup3 Bool (Unsigned 3) (BitVector 4))
   -- -> Signal System _ (MyPair (Tup3 Bool (Unsigned 3) (BitVector 4))  (Tup3 Bool (Unsigned 3) (BitVector 4)) )
   -> _
-testAutoGeneric clk rst = autoRegGeneric clk rst enableGen initVal
+testAutoGeneric clk rst = undefined -- autoRegGeneric clk rst enableGen initVal
 testAutoTH clk rst =  autoReg clk rst enableGen initVal
-{-# ANN testAutoGeneric (defSyn "testAutoGeneric") #-}
+{- # ANN testAutoGeneric (defSyn "testAutoGeneric") #-}
 {-# ANN testAutoTH (defSyn "testAutoTH") #-}
 
 -- topEntity =
