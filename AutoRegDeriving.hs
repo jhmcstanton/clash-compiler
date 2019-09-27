@@ -7,6 +7,7 @@ import Clash.Explicit.Prelude (register)
 import Clash.Signal.Internal
 import Clash.XException
 
+import Language.Haskell.TH.Datatype
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Ppr
@@ -19,32 +20,23 @@ import Data.List
 
 deriveAutoReg :: Name -> DecsQ
 deriveAutoReg tyNm = do
-  info <- reify tyNm
-  case info of
-    TyConI tyDec -> deriveTyConI tyDec
-    _ -> fail (unlines [ "deriveAutoReg not possible for: " ++ pprint tyNm ++ ", reify returned:"
-                       , show info])
+  tyInfo <- reifyDatatype tyNm
+  case datatypeCons tyInfo of
+    [] -> fail $ "Can't derive AutoReg for empty types"
+    [conInfo] -> deriveAutoRegProduct tyInfo conInfo
+    _ -> fail "Can't derive AutoReg for sum types"
 
 
-deriveTyConI :: Dec -> DecsQ
-deriveTyConI (DataD _cxt nm tyVars _mkind cons _derivs) =
-  case cons of
-    [con] -> deriveAutoRegProduct nm tyVars con
-    [] -> fail "Can't derive AutoReg for empty type"
-    _  -> fail "TODO derive AutoReg for sum types"
 
-deriveTyConI (NewtypeD _cxt nm tyVars _mkind con _derivs) = deriveAutoRegProduct nm tyVars con
-deriveTyConI other = fail ("deriveTyConI called with: " ++ show other)
-
-
-deriveAutoRegProduct :: Name -> [TyVarBndr] -> Con -> DecsQ
-deriveAutoRegProduct tyNm tyVarBndrs con = case con of
-  NormalC nm (map (\(_,ty) -> (Nothing,ty)) -> fieldTys) -> go nm fieldTys
-  RecC nm (map (\(sNm,_,ty)-> (Just sNm,ty)) -> fieldTys) -> go nm fieldTys
-  InfixC f1 nm f2 -> go nm (map (\(_,ty) -> (Nothing,ty)) [f1,f2])
-  ForallC _ _ con' -> fail "Can't derive AutoReg for existentially quantified data constructors" -- deriveAutoRegProduct tyNm tyVarBndrs con'
-  _ -> fail "Can't derive AutoReg for GADTs"
+deriveAutoRegProduct :: DatatypeInfo -> ConstructorInfo -> DecsQ
+deriveAutoRegProduct tyInfo conInfo = go (constructorName conInfo) (zip fieldNames (constructorFields conInfo))
   where
+    tyNm = datatypeName tyInfo
+    tyVarBndrs = datatypeVars tyInfo
+
+    fieldNames = case constructorVariant conInfo of
+      RecordConstructor nms -> map Just nms
+      _ -> repeat Nothing
     go :: Name -> [(Maybe Name,Type)] -> Q [Dec]
     go tyConNm fields = do
       let fieldTys = map snd fields
