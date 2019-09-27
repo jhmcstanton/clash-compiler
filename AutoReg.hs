@@ -21,10 +21,11 @@ class (NFDataX a) => AutoReg a where
           -> Signal dom a -> Signal dom a
   autoReg = register
 
+instance AutoReg ()
 instance AutoReg Bool
 instance AutoReg Char
 instance AutoReg Integer
-instance AutoReg Int
+-- instance AutoReg Int
 instance AutoReg Int8
 instance AutoReg Int16
 instance AutoReg Int32
