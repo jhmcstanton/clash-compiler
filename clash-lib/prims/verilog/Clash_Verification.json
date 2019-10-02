@@ -1,0 +1,46 @@
+[ { "BlackBox" :
+    { "name" : "Clash.Verification.past"
+    , "kind" : "Expression"
+    , "type" :
+"past
+  :: HiddenClock dom -- ARG[0]
+  => Signal dom Bool -- ARG[1]
+  -> Signal dom Bool"
+    , "template" : "$past(~ARG[1])"
+    }
+  }
+, { "BlackBox" :
+    { "name" : "Clash.Verification.assertAt"
+    , "kind" : "Declaration"
+    , "type" :
+"assertAt#
+  :: KnownDomain dom
+  => Clock dom
+  -> Signal dom Bool
+  -> a
+  -> a"
+    , "template" :
+"`ifdef FORMAL
+always @(~IF~ACTIVEEDGE[Rising][0]~THENposedge~ELSEnegedge~FI ~ARG[1])
+  assert(~ARG[2]);
+`endif
+assign ~RESULT = ~ARG[3];"
+    }
+  }
+, { "BlackBox" :
+    { "name" : "Clash.Verification.assertAlways"
+    , "kind" : "Declaration"
+    , "type" :
+"assertAlways
+  :: Signal dom Bool
+  -> a
+  -> a"
+    , "template" :
+"`ifdef FORMAL
+always @(*)
+  assert(~ARG[0]);
+`endif
+assign ~RESULT = ~ARG[1];"
+    }
+  }
+]
