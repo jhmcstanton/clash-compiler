@@ -296,6 +296,7 @@ runClashTest =
         -- VHDL tests disabled for now: I can't figure out how to generate a static name whilst retaining the ability to actually test..
         [ runTest ("tests" </> "shouldwork" </> "TopEntity")    [Verilog] [] "PortNames" (["","PortNames_topEntity","PortNames_testBench"],"PortNames_testBench",True)
         , outputTest ("tests" </> "shouldwork" </> "TopEntity") [Verilog] [] [] "PortNames" "main"
+        , runTest ("tests" </> "shouldwork" </> "TopEntity")    [Verilog] [] "PortNames" (["","PortNames_bitEntity","PortNames_testBench"],"PortNames_testBench",False)
         , outputTest ("tests" </> "shouldwork" </> "TopEntity") [Verilog] [] [] "PortNames" "vec1bit"
         , runTest ("tests" </> "shouldwork" </> "TopEntity")    [Verilog] [] "PortProducts" (["","PortProducts_topEntity","PortProducts_testBench"],"PortProducts_testBench",True)
         , outputTest ("tests" </> "shouldwork" </> "TopEntity") [Verilog] [] [] "PortProducts" "main"
